@@ -37,11 +37,11 @@ func (c *xmlCodec) Unmarshal(b []byte, v interface{}) error {
 	return xml.Unmarshal(b, v)
 }
 
-func (c *xmlCodec) ReadHeader(conn io.ReadWriter, m *codec.Message, t codec.MessageType) error {
+func (c *xmlCodec) ReadHeader(conn io.Reader, m *codec.Message, t codec.MessageType) error {
 	return nil
 }
 
-func (c *xmlCodec) ReadBody(conn io.ReadWriter, b interface{}) error {
+func (c *xmlCodec) ReadBody(conn io.Reader, b interface{}) error {
 	switch m := b.(type) {
 	case nil:
 		return nil
@@ -57,7 +57,7 @@ func (c *xmlCodec) ReadBody(conn io.ReadWriter, b interface{}) error {
 	return xml.NewDecoder(conn).Decode(b)
 }
 
-func (c *xmlCodec) Write(conn io.ReadWriter, m *codec.Message, b interface{}) error {
+func (c *xmlCodec) Write(conn io.Writer, m *codec.Message, b interface{}) error {
 	switch m := b.(type) {
 	case nil:
 		return nil
