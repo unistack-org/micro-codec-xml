@@ -23,7 +23,7 @@ func (c *xmlCodec) Marshal(b interface{}) ([]byte, error) {
 }
 
 func (c *xmlCodec) Unmarshal(b []byte, v interface{}) error {
-	if b == nil {
+	if len(b) == 0 {
 		return nil
 	}
 	switch m := v.(type) {
@@ -49,6 +49,8 @@ func (c *xmlCodec) ReadBody(conn io.Reader, b interface{}) error {
 		buf, err := ioutil.ReadAll(conn)
 		if err != nil {
 			return err
+		} else if len(buf) == 0 {
+			return nil
 		}
 		m.Data = buf
 		return nil
