@@ -54,7 +54,11 @@ func (c *xmlCodec) ReadBody(conn io.Reader, b interface{}) error {
 		return nil
 	}
 
-	return xml.NewDecoder(conn).Decode(b)
+	err := xml.NewDecoder(conn).Decode(b)
+	if err == io.EOF {
+		return nil
+	}
+	return err
 }
 
 func (c *xmlCodec) Write(conn io.Writer, m *codec.Message, b interface{}) error {
