@@ -4,34 +4,44 @@ package xml
 import (
 	"encoding/xml"
 	"io"
-	"io/ioutil"
 
 	"github.com/unistack-org/micro/v3/codec"
+	rutil "github.com/unistack-org/micro/v3/util/reflect"
 )
 
 type xmlCodec struct{}
 
-func (c *xmlCodec) Marshal(b interface{}) ([]byte, error) {
-	switch m := b.(type) {
+const (
+	flattenTag = "flatten"
+)
+
+func (c *xmlCodec) Marshal(v interface{}) ([]byte, error) {
+	switch m := v.(type) {
 	case nil:
 		return nil, nil
 	case *codec.Frame:
 		return m.Data, nil
 	}
 
-	return xml.Marshal(b)
+	if nv, nerr := rutil.StructFieldByTag(v, codec.DefaultTagName, flattenTag); nerr == nil {
+		v = nv
+	}
+
+	return xml.Marshal(v)
 }
 
 func (c *xmlCodec) Unmarshal(b []byte, v interface{}) error {
-	if len(b) == 0 {
+	if len(b) == 0 || v == nil {
 		return nil
 	}
-	switch m := v.(type) {
-	case nil:
-		return nil
-	case *codec.Frame:
+
+	if m, ok := v.(*codec.Frame); ok {
 		m.Data = b
 		return nil
+	}
+
+	if nv, nerr := rutil.StructFieldByTag(v, codec.DefaultTagName, flattenTag); nerr == nil {
+		v = nv
 	}
 
 	return xml.Unmarshal(b, v)
@@ -41,38 +51,35 @@ func (c *xmlCodec) ReadHeader(conn io.Reader, m *codec.Message, t codec.MessageT
 	return nil
 }
 
-func (c *xmlCodec) ReadBody(conn io.Reader, b interface{}) error {
-	switch m := b.(type) {
-	case nil:
-		return nil
-	case *codec.Frame:
-		buf, err := ioutil.ReadAll(conn)
-		if err != nil {
-			return err
-		} else if len(buf) == 0 {
-			return nil
-		}
-		m.Data = buf
+func (c *xmlCodec) ReadBody(conn io.Reader, v interface{}) error {
+	if v == nil {
 		return nil
 	}
 
-	err := xml.NewDecoder(conn).Decode(b)
-	if err == io.EOF {
+	buf, err := io.ReadAll(conn)
+	if err != nil {
+		return err
+	} else if len(buf) == 0 {
 		return nil
 	}
-	return err
+
+	return c.Unmarshal(buf, v)
 }
 
-func (c *xmlCodec) Write(conn io.Writer, m *codec.Message, b interface{}) error {
-	switch m := b.(type) {
-	case nil:
+func (c *xmlCodec) Write(conn io.Writer, m *codec.Message, v interface{}) error {
+	if v == nil {
 		return nil
-	case *codec.Frame:
-		_, err := conn.Write(m.Data)
-		return err
 	}
 
-	return xml.NewEncoder(conn).Encode(b)
+	buf, err := c.Marshal(v)
+	if err != nil {
+		return err
+	} else if len(buf) == 0 {
+		return codec.ErrInvalidMessage
+	}
+
+	_, err = conn.Write(buf)
+	return err
 }
 
 func (c *xmlCodec) String() string {
