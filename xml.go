@@ -9,13 +9,17 @@ import (
 	rutil "github.com/unistack-org/micro/v3/util/reflect"
 )
 
-type xmlCodec struct{}
+var _ codec.Codec = &xmlCodec{}
+
+type xmlCodec struct {
+	opts codec.Options
+}
 
 const (
 	flattenTag = "flatten"
 )
 
-func (c *xmlCodec) Marshal(v interface{}) ([]byte, error) {
+func (c *xmlCodec) Marshal(v interface{}, opts ...codec.Option) ([]byte, error) {
 	switch m := v.(type) {
 	case nil:
 		return nil, nil
@@ -23,14 +27,19 @@ func (c *xmlCodec) Marshal(v interface{}) ([]byte, error) {
 		return m.Data, nil
 	}
 
-	if nv, nerr := rutil.StructFieldByTag(v, codec.DefaultTagName, flattenTag); nerr == nil {
+	options := c.opts
+	for _, o := range opts {
+		o(&options)
+	}
+
+	if nv, nerr := rutil.StructFieldByTag(v, options.TagName, flattenTag); nerr == nil {
 		v = nv
 	}
 
 	return xml.Marshal(v)
 }
 
-func (c *xmlCodec) Unmarshal(b []byte, v interface{}) error {
+func (c *xmlCodec) Unmarshal(b []byte, v interface{}, opts ...codec.Option) error {
 	if len(b) == 0 || v == nil {
 		return nil
 	}
@@ -40,7 +49,12 @@ func (c *xmlCodec) Unmarshal(b []byte, v interface{}) error {
 		return nil
 	}
 
-	if nv, nerr := rutil.StructFieldByTag(v, codec.DefaultTagName, flattenTag); nerr == nil {
+	options := c.opts
+	for _, o := range opts {
+		o(&options)
+	}
+
+	if nv, nerr := rutil.StructFieldByTag(v, options.TagName, flattenTag); nerr == nil {
 		v = nv
 	}
 
@@ -86,6 +100,6 @@ func (c *xmlCodec) String() string {
 	return "xml"
 }
 
-func NewCodec() codec.Codec {
-	return &xmlCodec{}
+func NewCodec(opts ...codec.Option) *xmlCodec {
+	return &xmlCodec{opts: codec.NewOptions(opts...)}
 }
