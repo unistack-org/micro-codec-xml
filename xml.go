@@ -20,20 +20,20 @@ const (
 )
 
 func (c *xmlCodec) Marshal(v interface{}, opts ...codec.Option) ([]byte, error) {
-	switch m := v.(type) {
-	case nil:
+	if v == nil {
 		return nil, nil
-	case *codec.Frame:
-		return m.Data, nil
 	}
 
 	options := c.opts
 	for _, o := range opts {
 		o(&options)
 	}
-
 	if nv, nerr := rutil.StructFieldByTag(v, options.TagName, flattenTag); nerr == nil {
 		v = nv
+	}
+
+	if m, ok := v.(*codec.Frame); ok {
+		return m.Data, nil
 	}
 
 	return xml.Marshal(v)
@@ -44,11 +44,6 @@ func (c *xmlCodec) Unmarshal(b []byte, v interface{}, opts ...codec.Option) erro
 		return nil
 	}
 
-	if m, ok := v.(*codec.Frame); ok {
-		m.Data = b
-		return nil
-	}
-
 	options := c.opts
 	for _, o := range opts {
 		o(&options)
@@ -56,6 +51,11 @@ func (c *xmlCodec) Unmarshal(b []byte, v interface{}, opts ...codec.Option) erro
 
 	if nv, nerr := rutil.StructFieldByTag(v, options.TagName, flattenTag); nerr == nil {
 		v = nv
+	}
+
+	if m, ok := v.(*codec.Frame); ok {
+		m.Data = b
+		return nil
 	}
 
 	return xml.Unmarshal(b, v)
