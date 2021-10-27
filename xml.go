@@ -1,5 +1,5 @@
 // Package xml provides a xml codec
-package xml
+package xml // import "go.unistack.org/micro-codec-xml/v3"
 
 import (
 	"encoding/xml"
