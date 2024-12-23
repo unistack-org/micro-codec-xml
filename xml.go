@@ -40,6 +40,10 @@ func (c *xmlCodec) Marshal(v interface{}, opts ...codec.Option) ([]byte, error) 
 		return m.Data, nil
 	case *pb.Frame:
 		return m.Data, nil
+	case codec.RawMessage:
+		return []byte(m), nil
+	case *codec.RawMessage:
+		return []byte(*m), nil
 	}
 
 	return xml.Marshal(v)
@@ -67,6 +71,12 @@ func (c *xmlCodec) Unmarshal(b []byte, v interface{}, opts ...codec.Option) erro
 		return nil
 	case *pb.Frame:
 		m.Data = b
+		return nil
+	case *codec.RawMessage:
+		*m = append((*m)[0:0], b...)
+		return nil
+	case codec.RawMessage:
+		copy(m, b)
 		return nil
 	}
 
