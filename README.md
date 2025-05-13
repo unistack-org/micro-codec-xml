@@ -1,2 +1,2 @@
 # micro-codec-xml
-![Coverage](https://img.shields.io/badge/Coverage-14.8%25-red)
+![Coverage](https://img.shields.io/badge/Coverage-62.3%25-yellow)
