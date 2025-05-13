@@ -2,7 +2,9 @@
 package xml // import "go.unistack.org/micro-codec-xml/v3"
 
 import (
+	"bytes"
 	"encoding/xml"
+	"io"
 
 	pb "go.unistack.org/micro-proto/v3/codec"
 	"go.unistack.org/micro/v3/codec"
@@ -80,7 +82,41 @@ func (c *xmlCodec) Unmarshal(b []byte, v interface{}, opts ...codec.Option) erro
 		return nil
 	}
 
-	return xml.Unmarshal(b, v)
+	return xml.NewDecoder(newReader(b)).Decode(v)
+}
+
+type reader struct {
+	s        []byte
+	i        int64 // current reading index
+	prevRune int   // index of previous rune; or < 0
+	skip     bool
+}
+
+func newReader(b []byte) io.Reader {
+	return &reader{b, 0, -1, false}
+}
+
+var (
+	srcP = []byte(`version="1.1"`)
+	srcL = len(srcP)
+	dstP = []byte(`version="1.0"`)
+)
+
+func (r *reader) Read(b []byte) (n int, err error) {
+	if r.i >= int64(len(r.s)) {
+		return 0, io.EOF
+	}
+	r.prevRune = -1
+	n = copy(b, r.s[r.i:])
+	if !r.skip {
+		if idx := bytes.Index(b, srcP); idx > 0 {
+			copy(b[idx:idx+srcL], dstP)
+			r.skip = true
+		}
+	}
+
+	r.i += int64(n)
+	return
 }
 
 func (c *xmlCodec) String() string {
