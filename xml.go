@@ -21,6 +21,18 @@ const (
 	flattenTag = "flatten"
 )
 
+type unmarshalStrictKey struct{}
+
+func UnmarshalStrict(b bool) codec.Option {
+	return codec.SetOption(unmarshalStrictKey{}, b)
+}
+
+type unmarshalXML11Key struct{}
+
+func UnmarshalXML11(b bool) codec.Option {
+	return codec.SetOption(unmarshalXML11Key{}, b)
+}
+
 func (c *xmlCodec) Marshal(v interface{}, opts ...codec.Option) ([]byte, error) {
 	if v == nil {
 		return nil, nil
@@ -82,7 +94,32 @@ func (c *xmlCodec) Unmarshal(b []byte, v interface{}, opts ...codec.Option) erro
 		return nil
 	}
 
-	return xml.NewDecoder(newReader(b)).Decode(v)
+	var unmarshalStrict bool
+	var unmarshalXML11 bool
+	if options.Context != nil {
+		if v, ok := options.Context.Value(unmarshalStrictKey{}).(bool); ok {
+			unmarshalStrict = v
+		}
+		if v, ok := options.Context.Value(unmarshalXML11Key{}).(bool); ok {
+			unmarshalXML11 = v
+		}
+	}
+
+	var r io.Reader
+
+	if unmarshalXML11 {
+		r = newReader(b)
+	} else {
+		r = bytes.NewReader(b)
+	}
+
+	d := xml.NewDecoder(r)
+
+	if unmarshalStrict {
+		d.Strict = true
+	}
+
+	return d.Decode(v)
 }
 
 type reader struct {
