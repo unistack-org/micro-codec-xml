@@ -134,9 +134,9 @@ func newReader(b []byte) io.Reader {
 }
 
 var (
-	srcP = []byte(`version="1.1"`)
+	srcP = []byte(`<?xml version="1.1"`)
 	srcL = len(srcP)
-	dstP = []byte(`version="1.0"`)
+	dstP = []byte(`<?xml version="1.0"`)
 )
 
 func (r *reader) Read(b []byte) (n int, err error) {
@@ -146,7 +146,7 @@ func (r *reader) Read(b []byte) (n int, err error) {
 	r.prevRune = -1
 	n = copy(b, r.s[r.i:])
 	if !r.skip {
-		if idx := bytes.Index(b, srcP); idx > 0 {
+		if idx := bytes.Index(b, srcP); idx >= 0 {
 			copy(b[idx:idx+srcL], dstP)
 			r.skip = true
 		}
