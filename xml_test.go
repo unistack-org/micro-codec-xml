@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.unistack.org/micro/v4/codec"
+	"go.unistack.org/micro/v5/codec"
 )
 
 func TestXmlCodec_Unmarshal(t *testing.T) {

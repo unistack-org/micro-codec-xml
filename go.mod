@@ -1,11 +1,11 @@
-module go.unistack.org/micro-codec-xml/v4
+module go.unistack.org/micro-codec-xml/v5
 
 go 1.22.0
 
 require (
 	github.com/stretchr/testify v1.10.0
-	go.unistack.org/micro-proto/v4 v4.1.0
-	go.unistack.org/micro/v4 v4.1.3
+	go.unistack.org/micro-proto/v5 v4.1.0
+	go.unistack.org/micro/v5 v4.1.3
 )
 
 require (
